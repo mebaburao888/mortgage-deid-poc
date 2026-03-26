@@ -1,0 +1,4 @@
+faker
+chromadb
+numpy
+requests
