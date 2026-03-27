@@ -2,3 +2,4 @@ faker
 chromadb
 numpy
 requests
+scikit-learn
