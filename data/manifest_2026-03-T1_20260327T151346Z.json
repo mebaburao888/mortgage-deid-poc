@@ -1,0 +1,9 @@
+{
+  "tranche_id": "2026-03-T1",
+  "count": 20,
+  "timestamp": "20260327T151346Z",
+  "model": "nomic-embed-text",
+  "noise_epsilon": 0.01,
+  "chroma_collection": "mortgage_signals_test",
+  "chroma_path": "./data/chroma_test"
+}

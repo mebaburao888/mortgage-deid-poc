@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+    font-size: 13px;
+    line-height: 1.6;
+    color: #1a1a1a;
+    padding: 48px 56px;
+    max-width: 900px;
+    margin: 0 auto;
+  }
+  h1 {
+    font-size: 24px;
+    font-weight: 700;
+    margin: 0 0 8px 0;
+    color: #0f172a;
+    border-bottom: 2px solid #0f172a;
+    padding-bottom: 8px;
+  }
+  h2 {
+    font-size: 17px;
+    font-weight: 700;
+    margin: 28px 0 10px 0;
+    color: #0f172a;
+    border-bottom: 1px solid #e2e8f0;
+    padding-bottom: 4px;
+  }
+  h3 {
+    font-size: 14px;
+    font-weight: 700;
+    margin: 20px 0 8px 0;
+    color: #334155;
+  }
+  p { margin: 8px 0; }
+  pre {
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    border-radius: 4px;
+    padding: 12px 14px;
+    font-size: 11px;
+    overflow: auto;
+    margin: 10px 0;
+    font-family: 'Consolas', 'Monaco', monospace;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  code {
+    font-family: 'Consolas', 'Monaco', monospace;
+    font-size: 11px;
+    background: #f1f5f9;
+    padding: 1px 4px;
+    border-radius: 3px;
+  }
+  pre code { background: none; padding: 0; font-size: inherit; }
+  blockquote {
+    border-left: 4px solid #3b82f6;
+    background: #eff6ff;
+    padding: 10px 14px;
+    margin: 12px 0;
+    font-style: italic;
+    color: #1e40af;
+    border-radius: 0 4px 4px 0;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 12px 0;
+    font-size: 12px;
+  }
+  th {
+    background: #0f172a;
+    color: white;
+    padding: 8px 12px;
+    text-align: left;
+    font-weight: 600;
+  }
+  td {
+    padding: 7px 12px;
+    border-bottom: 1px solid #e2e8f0;
+  }
+  tr:nth-child(even) td { background: #f8fafc; }
+  ul { margin: 8px 0 8px 20px; }
+  li { margin: 3px 0; }
+  hr {
+    border: none;
+    border-top: 1px solid #e2e8f0;
+    margin: 24px 0;
+  }
+  strong { font-weight: 700; }
+  .subtitle {
+    color: #64748b;
+    font-size: 13px;
+    margin-bottom: 24px;
+  }
+  @page { margin: 0; }
+</style>
+</head>
+<body>
+<h1>The Full Picture: De-ID, Embed, Delete, Intelligence</h1></p><p>A framework for mortgage companies to extract audience intelligence from lead data while achieving NIST-compliant de-identification and full data minimization.
+
+<hr>
+
+<h2>Step 1: Raw Data Arrives</h2></p><p>A mortgage company gets a tranche of lead data. It looks like this:
+
+<pre><code>Name:     Brenda Morgan
+SSN:      405-91-9317
+DOB:      1955-08-01
+Phone:    823-403-3504
+Email:    brenda.morgan1@icloud.com
+Address:  5410 Sycamore Ave, Portland OR 97201
+Employer: Intel
+Income:   $91,000
+Loan:     $475,900 Purchase, Conventional, Investment PUD
+FICO:     769   DTI: 0.46   LTV: 0.64
+Channel:  Social / Warm Transfer   Score: 66
+Status:   Withdrawn
+</code></pre></p><p>Full of PII. Cannot be stored, shared, or used for marketing as-is.
+
+<hr>
+
+<h2>Step 2: De-Identify</h2></p><p>Three operations happen simultaneously, in memory, never written to disk.
+
+<strong>DROP — pure identifiers, zero signal value:</strong>
+
+<ul><li>Brenda Morgan (name adds nothing to targeting)</li>
+<li>405-91-9317 (SSN adds nothing to targeting)</li>
+<li>5410 Sycamore Ave (street number/name adds nothing)</li>
+<li>All GUIDs, loan numbers, agent names</li>
+</ul>
+<strong>HASH — identifiers with platform value:</strong>
+
+<pre><code>EmailToken  = SHA256("brenda.morgan1@icloud.com" + salt)
+           -> "b82cf41d..."   (used for Facebook/Google matching)</p><p>PhoneToken  = SHA256("823-403-3504" + salt)
+           -> "a3f9e821..."   (used for platform matching)
+</code></pre>
+
+<strong>TRANSFORM — identifiers that carry real signal:</strong>
+
+<pre><code>1955-08-01   ->  age_range: "70-74"
+                 life_stage: "pre-retirement"
+                 generation: "Boomer"</p><p>Intel        ->  industry: "Technology"
+                 employer_tier: "Fortune500"
+                 employment_stability: "high"</p><p>97201        ->  zip3: "972"
+                 city: Portland
+                 state: OR
+                 metro: "Portland-Vancouver"
+                 urban_class: "Urban"</p><p>$91,000      ->  income_range: "75k-100k"
+                 income_tier: "middle"</p><p>$475,900     ->  loan_amount_bucket: "450k-500k"
+</code></pre>
+
+<hr>
+
+<h2>Step 3: Build the Signal Record</h2></p><p>What remains after de-ID is rich, usable, and contains no personal information:
+
+<pre><code>{
+  "email_token":   "b82cf41d...",
+  "phone_token":   "a3f9e821...",</p><p>  "demographics": {
+    "age_range":    "70-74",
+    "life_stage":   "pre-retirement",
+    "generation":   "Boomer",
+    "gender":       "Female",
+    "marital":      "Married",
+    "dependents":   2,
+    "military":     false
+  },
+  "geography": {
+    "state":        "OR",
+    "city":         "Portland",
+    "zip3":         "972",
+    "metro":        "Portland-Vancouver",
+    "region":       "West",
+    "urban_class":  "Urban"
+  },
+  "financial": {
+    "credit_profile":  "Excellent",
+    "fico_band":       "760-779",
+    "income_range":    "75k-100k",
+    "dti_bucket":      "0.40-0.50",
+    "ltv_bucket":      "0.60-0.65",
+    "bankruptcy":      "None",
+    "foreclosure":     "None"
+  },
+  "employment": {
+    "status":       "Employed",
+    "tenure_band":  "15+ years",
+    "industry":     "Technology",
+    "tier":         "Fortune500",
+    "stability":    "high"
+  },
+  "loan_intent": {
+    "purpose":       "Purchase",
+    "type":          "Conventional",
+    "amount_bucket": "450k-500k",
+    "property_type": "PUD",
+    "occupancy":     "Investment",
+    "term":          15
+  },
+  "lead_behavior": {
+    "channel":          "Social",
+    "type":             "Warm Transfer",
+    "score":            66,
+    "journey_stage":    "Application",
+    "first_time_buyer": true,
+    "quarter":          "Q3"
+  },
+  "offer": {
+    "type":            "HELOC",
+    "rate":            8.433,
+    "monthly_savings": 433.46,
+    "annual_savings":  5201.52
+  },
+  "outcome":    null,
+  "tranche_id": "2026-03-T1"
+}
+</code></pre>
+
+<hr>
+
+<h2>Step 4: Generate Two Text Templates</h2>
+
+<strong>Profile vector — who is this person:</strong>
+
+<blockquote>Boomer female, pre-retirement, age 70-74. Portland OR metro, urban West region. Married, 2 dependents, non-military. Fortune500 tech employee, 15+ years tenure, high stability. Excellent credit, FICO 760-779, income $75k-100k. DTI 0.40-0.50, LTV 0.60-0.65. No bankruptcy or foreclosure. Investment property owner.</blockquote>
+
+<strong>Intent vector — what do they want:</strong>
+
+<blockquote>Purchase loan $450k-500k, conventional 15yr, investment PUD. Social channel warm transfer, score 66, application stage. First-time buyer. Q3. HELOC offer, 8.4% rate, $433/mo savings. Status: Withdrawn.</blockquote>
+
+<hr>
+
+<h2>Step 5: Embed Locally</h2></p><p>Both templates run through <code>nomic-embed-text</code> on Ollama. No data leaves the machine.
+
+<pre><code>Profile text  ->  [0.021, -0.847, 0.334, 0.612 ... x 768 dims]
+Intent text   ->  [0.445, 0.112, -0.923, 0.087 ... x 768 dims]
+</code></pre>
+
+<hr>
+
+<h2>Step 6: Store in Chroma</h2>
+
+<pre><code>Vector store entry:
+  profile_vector:  [0.021, -0.847, ...]
+  intent_vector:   [0.445, 0.112, ...]
+  metadata:        { all signal fields above }
+  tokens:          { email_token, phone_token }
+  tranche_id:      "2026-03-T1"
+  outcome:         null
+</code></pre>
+
+<hr>
+
+<h2>Step 7: Delete Everything</h2>
+
+<pre><code>Raw CSV               -> secure wiped
+De-ID intermediate    -> never written to disk
+Text templates        -> discarded after embedding</p><p>Tranche manifest written:
+{
+  "tranche_id":     "2026-03-T1",
+  "record_count":   100,
+  "source_hash":    "sha256:abc123...",
+  "source_deleted": true,
+  "deleted_at":     "2026-03-17T16:17:00Z",
+  "model":          "nomic-embed-text"
+}
+</code></pre>
+
+<strong>What remains: vectors + metadata + tokens. Zero PII. Anywhere.</strong>
+
+<hr>
+
+<h2>Step 8: Outcomes Flow Back In</h2>
+
+<pre><code>Day 0:    outcome: null,      stage: "Application"
+Day 45:   outcome: "funded",  days_to_close: 45
+Month 6:  servicing: "current"
+Month 18: new lead -> linked via email_token -> 360 view complete
+</code></pre></p><p>No PII needed. The token is the thread connecting the full lifecycle.
+
+<hr>
+
+<h2>Step 9: Next Tranche Arrives</h2>
+
+<pre><code>March:   100 vectors   outcomes pending
+April:   200 vectors   March outcomes arriving
+May:     300 vectors   March fully resolved -> propensity patterns emerge
+Q4:    1,200 vectors   -> genuine audience intelligence asset
+</code></pre>
+
+<hr>
+
+<h2>What This Enables</h2>
+
+<strong>Lookalike audiences — no data science team required</strong></p><p>Query: "Find 200 profiles nearest to my funded loans"
+Chroma returns nearest vectors. Extract email_token + phone_token.
+Upload to Facebook Custom Audience. Facebook finds 2M people who look like them.
+Cost: one query. Time: minutes.
+
+<strong>Propensity scoring at the door</strong></p><p>New lead arrives. Embed. Find 20 nearest neighbors.
+14 of 20 funded historically = lead scores 70/100.
+Route to priority queue. No model training. The store IS the model.
+
+<strong>Segment discovery you did not plan for</strong></p><p>Cluster all vectors:
+
+<ul><li>Segment A: military VA buyers, Pacific Northwest, mid-30s, first-time, 78% funded rate</li>
+<li>Segment B: Boomer cash-out, investment property, excellent credit, high re-engagement at 18 months</li>
+</ul>
+Neither was predefined. Both are actionable.
+
+<strong>Re-engagement targeting</strong></p><p>Query: funded 18-24 months ago + investment property + rate above 7% + excellent credit.
+Extract tokens. Build suppression list and retargeting campaign.
+
+<hr>
+
+<h2>The Benefits</h2>
+
+<table><thead><tr><th>Benefit</th><th>What It Means</th></tr></thead><tbody><tr><td>Zero PII retained</td><td>Nothing to breach. Nothing to audit. Compliance story is clean.</td></tr><tr><td>Data minimization</td><td>Source deleted immediately. Only the intelligence layer persists.</td></tr><tr><td>NIST defensible</td><td>De-id before embed. Expert Determination standard.</td></tr><tr><td>GLBA compliant</td><td>No consumer financial data retained beyond processing window.</td></tr><tr><td>Proprietary signal</td><td>Your data, your model, your audience. No licensing fees.</td></tr><tr><td>Compounds over time</td><td>Each tranche makes the next one smarter.</td></tr><tr><td>No data science team</td><td>The vector store is the model. Query it directly.</td></tr><tr><td>Platform-ready tokens</td><td>EmailToken and PhoneToken work natively with Facebook, Google, LiveRamp.</td></tr></tbody></table>
+<hr>
+
+<h2>The Compliance Story This Tells</h2></p><p>"We ingest raw data, apply NIST-compliant de-identification, embed the sanitized signal locally, and immediately destroy all source and intermediate files. The only persistent artifact is a vector store containing no personal information, queryable only for aggregate audience intelligence."</p><p>That is a clean story for a compliance team, a regulator, or a client's legal department.
+
+<hr>
+
+<h2>Bottom Line</h2></p><p>Most mortgage companies do one of three things with their lead data:
+
+<ul><li><strong>Keep it raw</strong> — compliance liability, breach risk, ongoing regulatory exposure</li>
+<li><strong>Delete it</strong> — compliant but zero residual value</li>
+<li><strong>Sell it to a data broker</strong> — one-time revenue, lose control permanently</li>
+</ul>
+This architecture does something none of those do:
+
+<blockquote>Extract every usable signal, destroy every identifier, and build a compounding intelligence asset that gets more valuable with every tranche — with zero ongoing PII exposure.</blockquote></p><p>The de-identification cost is the same cost you would pay to store it in SQL. The embedding cost is minimal. What you get back is a proprietary audience intelligence layer that replaces expensive third-party data, enables lookalike modeling without a data science team, and closes the 360 loop from lead to outcome to re-engagement — all without a single name, SSN, or phone number ever persisting anywhere.
+
+<table><thead><tr><th>Approach</th><th>De-ID?</th><th>Compliant?</th><th>Data Minimization?</th></tr></thead><tbody><tr><td>Embed raw, keep source</td><td>No</td><td>No</td><td>No</td></tr><tr><td>Embed raw, delete source</td><td>No</td><td>No</td><td>Partial</td></tr><tr><td>De-ID, embed, keep both</td><td>Yes</td><td>Yes</td><td>No</td></tr><tr><td><strong>De-ID, embed, delete everything</strong></td><td><strong>Yes</strong></td><td><strong>Yes</strong></td><td><strong>Yes</strong></td></tr></tbody></table></p>
+</body>
+</html>
